@@ -1,29 +1,39 @@
-let fs = require('fs');
-let traverse = require('./traverse.js');
-let tinify = require('tinify');
-tinify.key = 'LsLkJ1Q1xDXHgkZuZGoQJRXsq6E9lc7K';
+﻿const fs = require('fs')
+const R = require('ramda')
+const path = require('path')
+const analyze = require('./analyze.js')
+const getFiles = require('./getFiles.js')
+const tinify = require('tinify')
+tinify.key = 'LsLkJ1Q1xDXHgkZuZGoQJRXsq6E9lc7K'
 
-// let files = traverse(process.argv.slice(2));
-let files = traverse('image');
-let format = path => {
-    let dotIndex = path.lastIndexOf('.');
-    let result = path.substring(0, dotIndex) + '-new' + path.substring(dotIndex);
-    return result
-}
-let results = files.map(value => {
-    return new Promise((resolve, reject) => {
-        let source = tinify.fromFile(value);
-        let formatFile = format(value);
-        source.toFile(formatFile, function () {
-            let prev = fs.statSync(value);
-            let after = fs.statSync(formatFile);
-            process.stdout.write(`${value}---压缩前:${(prev.size / 1024).toFixed(1)}KB---压缩后:${(after.size / 1024).toFixed(1)}KB---压缩率:${(100 * (1 - after.size / prev.size)).toFixed(1)}%\n`);
-            resolve()
-        });
-    })
+/* Validation of API key */
+tinify.validate(function (err) {
+    if (err) throw new Error(' your API key is invalid , please input the correct API key ')
 })
+
+const param = process.argv.slice(2)
+const files = getFiles(param)
+
+const transfer = {
+    name: R.flip(R.concat)('-new')
+}
+const rename = R.compose(path.format, R.evolve(transfer), R.omit(['root', 'base']), path.parse)
+const getProp = prop => R.compose(R.prop(prop), fs.statSync)
+const getSize = getProp('size')
+
+const results = files.map(value => new Promise((resolve, reject) => {
+    const newName = rename(value)
+    tinify.fromFile(value).toFile(newName, function () {
+        const data = analyze(getSize(value), getSize(newName))
+        process.stdout.write('**************************************************' + '\n')
+        process.stdout.write(`路  径:${value}\n压缩前:${data.before}\n压缩后:${data.after}\n压缩率:${data.precent}\n`)
+        resolve()
+    })
+}))
+
 Promise.all(results)
     .then(() => {
+        process.stdout.write('**************************************************' + '\n');
         process.stdout.write('all images have been compressed completely!')
     })
     .catch(err => {

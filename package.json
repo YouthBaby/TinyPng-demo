@@ -1,14 +1,19 @@
 {
   "name": "tinypng",
   "version": "1.0.0",
-  "description": "compress the image (jpg,png)",
+  "description": "compress the image (jpg,png) with TinyPng API",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
-  "author": "YB",
+  "repository": {
+    "type": "git",
+    "url": "master"
+  },
+  "author": "YouthBaby",
   "license": "MIT",
   "dependencies": {
-    "tinify": "^1.5.0"
+    "ramda": "^0.26.1",
+    "tinify": "^1.6.0-beta.2"
   }
 }
